@@ -33,9 +33,9 @@ import io.netty.handler.codec.http.HttpContentEncoder.Result;
  */
 public class App {
   public static void main(String[] args) throws InterruptedException, IOException {
-    String[] symbols = { "gnw" };
+    String[] symbols = { "nxpi" };
     Arrays.sort(symbols);
-    String optionSymbol = "gnw";
+    String optionSymbol = "nxpi";
     List<String[]> queries = new ArrayList<String[]>();
     queries.add(new String[] { "strikeprice", "<", "130" });
     queries.add(new String[] { "put_call", "eq", "call" });
@@ -80,62 +80,16 @@ public class App {
       }
 
     });
-    // double endPrice = 127.5;
-    double endPrice = 5.41; // 5.43 but price never gets there.
+    double endPrice = 127.5;
+    // double endPrice = 5.41; // 5.43 but price never gets there.
     for (Quote quote : list) {
-      double breakeven = quote.getStrikeprice() + quote.getAsk();
-      double profitMultiple = (endPrice - breakeven) / quote.getAsk() * 100;
-      if (profitMultiple > 0.0) {
+      double profit = endPrice - quote.getStrikeprice();
+      double profitMultiple = profit / quote.getAsk();
+      if (profitMultiple > 1.0) {
 
-        System.out.println(quote.getAsk() + "\t" + quote.getStrikeprice() + "\t" + profitMultiple + "\t" + breakeven
-            + "\t" + "\t" + quote.getXday() + "\t" + quote.getXmonth() + "\t" + quote.getXyear());
+        System.out.println(String.format("%8.2f", profitMultiple) + "\t" + quote.getAsk() + "\t" + quote.getXday() + "\t"
+            + quote.getXmonth() + "\t" + quote.getXyear() + "\t" + quote.getStrikeprice());
       }
-    }
-
-    System.out.println("NXPI: ");
-    optionSymbol = "nxpi";
-    quotesResponse = tk.options(optionSymbol, queries, fids);
-    list = quotesResponse.getQuotes().getQuote();
-    endPrice = 127.5;
-    for (Quote quote : list) {
-      double breakeven = quote.getStrikeprice() + quote.getAsk();
-      double profitMultiple = (endPrice - breakeven) / quote.getAsk() * 100;
-      if (profitMultiple > 0.0) {
-
-        System.out.println(quote.getAsk() + "\t" + quote.getStrikeprice() + "\t" + profitMultiple + "\t" + breakeven
-            + "\t" + "\t" + quote.getXday() + "\t" + quote.getXmonth() + "\t" + quote.getXyear());
-      }
-    }
-
-    System.out.println("\n\nUVXY: ");
-    optionSymbol = "UVXY";
-    queries.remove(queries.size() - 1);
-    queries.add(new String[] { "put_call", "eq", "put" });
-    quotesResponse = tk.options(optionSymbol, queries, fids);
-    list = quotesResponse.getQuotes().getQuote();
-    endPrice = 9.86;
-    for (Quote quote : list) {
-      double breakeven = quote.getStrikeprice() - quote.getAsk();
-      double profitMultiple = Math.abs((endPrice - breakeven)) / quote.getAsk() * 100;
-      if (breakeven > 2.5) {
-
-        System.out.println(
-            quote.getAsk() + "\t" + String.format("%.2f", breakeven) +"\t"+ quote.getStrikeprice()+ "\t" + String.format("%.2f", profitMultiple)
-                + "\t" + quote.getXday() + " " + quote.getXmonth() + " " + quote.getXyear());
-      }
-    }
-    String[] sym = { "T" };
-    quotes = tk.quotes(sym);
-    q = quotes.getQuotes().getQuote();
-    for (Quote qt : q) {
-      System.out.println(qt.getSymbol() + "\t" + qt.getAsk());
-      if (qt.getAsk() < 37.411) {
-
-        System.out.println(53.75 + 1.437 * qt.getAsk());
-      } else if (qt.getAsk() > 41.349) {
-        System.out.println(53.75 + 1.3 * qt.getAsk());
-      } else
-        System.out.println(53.75 * 2);
     }
 
     // TimeUnit.SECONDS.sleep(15);
