@@ -2,6 +2,8 @@ package com.github.khoanguyen0791.optionAnalysis;
 
 import java.util.ArrayList;
 import java.io.IOException;
+import java.sql.Time;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -28,15 +30,15 @@ public class App {
     String[] quoteSymbols = { "nxpi" };
     String optionSymbol = "NXPI";
     List<String[]> queries = new ArrayList<String[]>();
-    //queries.add(new String[] { "strikeprice", "<", "130" });
+    // queries.add(new String[] { "strikeprice", "<", "130" });
     queries.add(new String[] { "put_call", "eq", "call" });
-
-    Comparator<Quote> comparator = new resultComparator();
-    while(true) {
-      getQuote(quoteSymbols, null, comparator);
+    while (true) {
+      Comparator<Quote> comparator = new resultComparator();
       // getPutOption(optionSymbol, queries, null, 12, comparator);
       getCallOption(optionSymbol, queries, null, 125, comparator);
-      TimeUnit.SECONDS.sleep(10);      
+      getQuote(quoteSymbols, null, comparator);
+      System.out.println(Instant.now());
+      TimeUnit.SECONDS.sleep(10);
     }
 
     // }
@@ -100,19 +102,23 @@ public class App {
 
     int curDay = 0;
     for (Quote qt : list) {
-      if (curDay != qt.getXday())
+      if (curDay != qt.getXday()) {
         System.out.println("");
+      }
       curDay = qt.getXday();
 
       double profit = targetPrice - qt.getStrikeprice() - qt.getAsk();
       double profitMultiple = profit / qt.getAsk();
-      if (profitMultiple > 0.0) {
+      if (profitMultiple > 2.0) {
 
-        System.out.println(String.format("%8.2f", profitMultiple) + "\t" + String.format("%8.2f", qt.getAsk()) + "\t"
-            + qt.getXday() + " " + qt.getXmonth() + " " + qt.getXyear() + "\t"
-            + String.format("%8.2f", qt.getStrikeprice()) + "\t" + qt.getSymbol());
+        System.out.println(String.format("%6.2f", profitMultiple) + "\t" + String.format("%6.2f", qt.getAsk()) + "\t"
+            + qt.getBid() + "\t" + qt.getXday() + " " + qt.getXmonth() + " " + qt.getXyear() + "  "
+            + String.format("%6.2f", qt.getStrikeprice()) + "  " + String.format("%8.2f", qt.getOpeninterest())
+            + String.format("%4d", qt.getAsksz()) + String.format("%4d", qt.getBidsz())
+            + String.format("%3d", qt.getIncrVl()) + String.format("%10.7f", qt.getItheta()));
       }
     }
+
   }
 
   public static void getPutOption(String symbol, List<String[]> queries, String[] fids, double targetPrice,
@@ -130,11 +136,11 @@ public class App {
 
       double profit = qt.getStrikeprice() - targetPrice - qt.getAsk();
       double profitMultiple = profit / qt.getAsk();
-      if (profitMultiple > 0.0) {
+      if (profitMultiple > 3.0) {
 
-        System.out.println(String.format("%8.2f", profitMultiple) + "\t" + String.format("%8.2f", qt.getAsk()) + "\t"
+        System.out.println(String.format("%6.2f", profitMultiple) + "\t" + String.format("%6.2f", qt.getAsk()) + "\t"
             + qt.getXday() + " " + qt.getXmonth() + " " + qt.getXyear() + "\t"
-            + String.format("%8.2f", qt.getStrikeprice()) + "\t" + qt.getSymbol());
+            + String.format("%6.2f", qt.getStrikeprice()) + "\t" + qt.getSymbol());
       }
     }
   }
@@ -149,18 +155,18 @@ public class App {
     @Override
     public int compare(Quote o1, Quote o2) {
       int result = 0;
-      result = Integer.valueOf(o1.getXyear()).compareTo(Integer.valueOf(o2.getXyear()));
+      result = Integer.valueOf(o2.getXyear()).compareTo(Integer.valueOf(o1.getXyear()));
       if (result != 0)
         return result;
-      result = Integer.valueOf(o1.getXmonth()).compareTo(Integer.valueOf(o2.getXmonth()));
-      if (result != 0)
-        return result;
-
-      result = Integer.valueOf(o1.getXday()).compareTo(Integer.valueOf(o2.getXday()));
+      result = Integer.valueOf(o2.getXmonth()).compareTo(Integer.valueOf(o1.getXmonth()));
       if (result != 0)
         return result;
 
-      result = Double.valueOf(o1.getStrikeprice()).compareTo(Double.valueOf(o2.getStrikeprice()));
+      result = Integer.valueOf(o2.getXday()).compareTo(Integer.valueOf(o1.getXday()));
+      if (result != 0)
+        return result;
+
+      result = Double.valueOf(o2.getStrikeprice()).compareTo(Double.valueOf(o1.getStrikeprice()));
       return result;
     }
 
@@ -175,7 +181,7 @@ public class App {
   public static List<String> toStringArray(List<Object> objectList) {
     List<String> stringList = new ArrayList<>();
     for (Object q : objectList) {
-      stringList.add(String.format("%8.2f", q));
+      stringList.add(String.format("%6.2f", q));
     }
     return stringList;
   }
