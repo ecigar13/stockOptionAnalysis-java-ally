@@ -27,31 +27,35 @@ import io.netty.handler.codec.http.HttpContentEncoder.Result;
  */
 public class App {
   public static void main(String[] args) throws InterruptedException, IOException {
-    String[] quoteSymbols = { "nxpi" };
-    String optionSymbol = "NXPI";
-    List<String[]> queries = new ArrayList<String[]>();
-    // queries.add(new String[] { "strikeprice", "<", "130" });
-    queries.add(new String[] { "put_call", "eq", "call" });
-    while (true) {
-      Comparator<Quote> comparator = new resultComparator();
-      // getPutOption(optionSymbol, queries, null, 12, comparator);
-      getCallOption(optionSymbol, queries, null, 125, comparator);
-      getQuote(quoteSymbols, null, comparator);
-      System.out.println(Instant.now());
-      TimeUnit.SECONDS.sleep(10);
-    }
 
     // }
 
     // get your account
     // AccountsResponse a = tk.accounts();
     // stream market quotes
-    //
-    // Future f = tk.streamQuotes(new StreamHandler<Quote>() {
-    // public void handle(Quote quote) {
-    // System.out.println(quote.toString());
-    // }
-    // }, "TWTR", "FB");
+
+    TradeKing tk = new TradeKing(new TradeKingForeman());
+    Future f = tk.streamQuotes(new StreamHandler<Quote>() {
+      public void handle(Quote quote) {
+        if (quote.getBid() != 0.0) {
+          System.out.println(quote.getSymbol() + "\t" + quote.getBid() + "\t" + quote.getAsk());
+        }
+      }
+    }, "F", "GM");
+
+    String[] quoteSymbols = { "F", "GM" };
+    String optionSymbol = "MON";
+    List<String[]> queries = new ArrayList<String[]>();
+    // queries.add(new String[] { "strikeprice", "<", "130" });
+    queries.add(new String[] { "put_call", "eq", "call" });
+    while (true) {
+      Comparator<Quote> comparator = new resultComparator();
+      // getPutOption(optionSymbol, queries, null, 12, comparator);
+      // getCallOption(optionSymbol, queries, null, 125, comparator);
+      getQuote(quoteSymbols, null, comparator);
+      System.out.println(Instant.now());
+      TimeUnit.SECONDS.sleep(15);
+    }
 
   }
 
@@ -73,7 +77,7 @@ public class App {
     List<Quote> list = quotesResponse.getQuotes().getQuote();
 
     for (Quote qt : list) {
-      System.out.println(qt.getSymbol() + "\t" + qt.getBid() + "\t" + qt.getAsk());
+      System.out.println(qt.getSymbol() + "\t" + qt.getBid() + "\t" + qt.getAsk() + "\t" + qt.getVl());
     }
   }
 
@@ -101,6 +105,7 @@ public class App {
     list.sort(comparator);
 
     int curDay = 0;
+    double maxMultiple = 0.0;
     for (Quote qt : list) {
       if (curDay != qt.getXday()) {
         System.out.println("");
@@ -109,15 +114,21 @@ public class App {
 
       double profit = targetPrice - qt.getStrikeprice() - qt.getAsk();
       double profitMultiple = profit / qt.getAsk();
-      if (profitMultiple > 2.0) {
+
+      if (maxMultiple < profitMultiple) {
+        maxMultiple = profitMultiple;
+      }
+      if (profitMultiple > 0.0) {
 
         System.out.println(String.format("%6.2f", profitMultiple) + "\t" + String.format("%6.2f", qt.getAsk()) + "\t"
             + qt.getBid() + "\t" + qt.getXday() + " " + qt.getXmonth() + " " + qt.getXyear() + "  "
             + String.format("%6.2f", qt.getStrikeprice()) + "  " + String.format("%8.2f", qt.getOpeninterest())
             + String.format("%4d", qt.getAsksz()) + String.format("%4d", qt.getBidsz())
-            + String.format("%3d", qt.getIncrVl()) + String.format("%10.7f", qt.getItheta()));
+            + String.format("%3d", qt.getIncrVl()) + String.format("%10d", qt.getVl()));
       }
+
     }
+    System.out.println("Max call multiple: " + String.format("%6.2f", maxMultiple));
 
   }
 
@@ -127,8 +138,9 @@ public class App {
     QuotesResponse optionResponse = tk.options(symbol, queries, fids);
     List<Quote> list = optionResponse.getQuotes().getQuote();
     list.sort(comparator);
-    int curDay = 0;
 
+    int curDay = 0;
+    double maxMultiple = 0.0;
     for (Quote qt : list) {
       if (curDay != qt.getXday())
         System.out.println("");
@@ -136,13 +148,22 @@ public class App {
 
       double profit = qt.getStrikeprice() - targetPrice - qt.getAsk();
       double profitMultiple = profit / qt.getAsk();
-      if (profitMultiple > 3.0) {
+
+      if (maxMultiple < profitMultiple) {
+        maxMultiple = profitMultiple;
+      }
+      if (profitMultiple > 5.0) {
 
         System.out.println(String.format("%6.2f", profitMultiple) + "\t" + String.format("%6.2f", qt.getAsk()) + "\t"
-            + qt.getXday() + " " + qt.getXmonth() + " " + qt.getXyear() + "\t"
-            + String.format("%6.2f", qt.getStrikeprice()) + "\t" + qt.getSymbol());
+            + qt.getBid() + "\t" + qt.getXday() + " " + qt.getXmonth() + " " + qt.getXyear() + "  "
+            + String.format("%6.2f", qt.getStrikeprice()) + "  " + String.format("%8.2f", qt.getOpeninterest())
+            + String.format("%4d", qt.getAsksz()) + String.format("%4d", qt.getBidsz())
+            + String.format("%3d", qt.getIncrVl()) + String.format("%10d", qt.getVl()));
       }
+
     }
+    System.out.println("Max put multiple: " + String.format("%6.2f", maxMultiple));
+
   }
 
   /**
